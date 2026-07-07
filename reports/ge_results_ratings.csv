@@ -1,0 +1,11 @@
+framework,dataset,expectation,passed
+great_expectations,ratings,userId column exists,True
+great_expectations,ratings,productId column exists,True
+great_expectations,ratings,rating column exists,False
+great_expectations,ratings,timestamp column exists,True
+great_expectations,ratings,userId has no nulls,True
+great_expectations,ratings,productId has no nulls,True
+great_expectations,ratings,rating has no nulls,True
+great_expectations,ratings,"rating values in range [1, 5]",True
+great_expectations,ratings,row count between 10K and 10M,True
+great_expectations,ratings,userId matches Amazon reviewer ID format,True

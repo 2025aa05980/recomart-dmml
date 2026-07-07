@@ -1,0 +1,3 @@
+ingested_at,source,file,rows,size_bytes,md5,status,dataset
+2026-07-07T02:59:57.608711,ratings_jsonl,ratings_20260707_025900.csv,268463,14228361,d9c4806c49aebc00bac17c2d1c0cc5a7,SUCCESS,Amazon Reviews 2023 — Video Games
+2026-07-07T03:00:02.969888,metadata_jsonl,products_20260707_025959.csv,137269,44107232,756947899704af56b426655f22908cbf,SUCCESS,Amazon Reviews 2023 — Video Games

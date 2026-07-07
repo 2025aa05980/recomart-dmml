@@ -1,0 +1,9 @@
+framework,dataset,expectation,passed
+great_expectations,products,productId column exists,True
+great_expectations,products,title column exists,True
+great_expectations,products,price column exists,True
+great_expectations,products,productId has no nulls,True
+great_expectations,products,productId values are unique,False
+great_expectations,products,title has no nulls,True
+great_expectations,products,"price in range [0, 10000] for 90%+ rows",True
+great_expectations,products,product count between 1K and 5M,True

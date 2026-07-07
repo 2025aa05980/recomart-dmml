@@ -1,0 +1,390 @@
+2026-07-06 23:01:10 | INFO     | storage_setup | === Setting up RecoMart storage structure ===
+2026-07-06 23:01:10 | INFO     | storage_setup | Created 14 directories
+2026-07-06 23:01:10 | INFO     | storage_setup | README.md written → /home/claude/recomart/README.md
+2026-07-06 23:01:10 | INFO     | storage_setup | Storage docs written → /home/claude/recomart/reports/storage_structure.md
+2026-07-06 23:01:10 | INFO     | storage_setup | requirements.txt written → /home/claude/recomart/requirements.txt
+2026-07-06 23:01:10 | INFO     | storage_setup | === Storage setup COMPLETE ===
+2026-07-06 23:01:22 | INFO     | ingestion | ========== RecoMart Ingestion Pipeline START ==========
+2026-07-06 23:01:22 | INFO     | ingestion | === Ingesting ratings (user-item interactions) ===
+2026-07-06 23:01:22 | INFO     | ingestion | Using local file: /home/claude/recomart/data/raw/interactions/ratings_Electronics.csv
+2026-07-06 23:01:22 | INFO     | ingestion | Ratings loaded: 50,000 rows, 5,000 users, 3,000 products
+2026-07-06 23:01:22 | INFO     | ingestion | Sampled to 5,000 users → 50,000 interactions
+2026-07-06 23:01:22 | INFO     | ingestion | Ratings saved → ratings_20260706_230122.csv | MD5: e59750c79f28a12aea6603d79fa4ca47
+2026-07-06 23:01:22 | DEBUG    | ingestion | Audit log updated → ingestion_audit.csv
+2026-07-06 23:01:22 | INFO     | ingestion | === Ingesting product metadata (catalog) ===
+2026-07-06 23:01:22 | INFO     | ingestion | Attempt 1/3 — downloading https://snap.stanford.edu/data/amazon/productGraph/categoryFiles/meta_Electronics.json.gz
+2026-07-06 23:01:22 | WARNING  | ingestion | Attempt 1 failed: 403 Client Error: Forbidden for url: https://snap.stanford.edu/data/amazon/productGraph/categoryFiles/meta_Electronics.json.gz
+2026-07-06 23:01:22 | INFO     | ingestion | Retrying in 5s...
+2026-07-06 23:01:27 | INFO     | ingestion | Attempt 2/3 — downloading https://snap.stanford.edu/data/amazon/productGraph/categoryFiles/meta_Electronics.json.gz
+2026-07-06 23:01:27 | WARNING  | ingestion | Attempt 2 failed: 403 Client Error: Forbidden for url: https://snap.stanford.edu/data/amazon/productGraph/categoryFiles/meta_Electronics.json.gz
+2026-07-06 23:01:27 | INFO     | ingestion | Retrying in 5s...
+2026-07-06 23:01:32 | INFO     | ingestion | Attempt 3/3 — downloading https://snap.stanford.edu/data/amazon/productGraph/categoryFiles/meta_Electronics.json.gz
+2026-07-06 23:01:33 | WARNING  | ingestion | Attempt 3 failed: 403 Client Error: Forbidden for url: https://snap.stanford.edu/data/amazon/productGraph/categoryFiles/meta_Electronics.json.gz
+2026-07-06 23:01:33 | ERROR    | ingestion | All 3 attempts failed for https://snap.stanford.edu/data/amazon/productGraph/categoryFiles/meta_Electronics.json.gz
+2026-07-06 23:01:33 | WARNING  | ingestion | Metadata download failed — generating synthetic product catalog
+2026-07-06 23:01:33 | INFO     | ingestion | Synthetic catalog generated → products_20260706_230122.csv (3000 products)
+2026-07-06 23:01:33 | DEBUG    | ingestion | Audit log updated → ingestion_audit.csv
+2026-07-06 23:01:33 | INFO     | ingestion | ========== Ingestion COMPLETE in 11.1s ==========
+2026-07-07 02:35:46 | INFO     | storage_setup | === RecoMart Storage Setup START ===
+2026-07-07 02:35:46 | INFO     | storage_setup | Created 14 directories
+2026-07-07 02:35:46 | INFO     | storage_setup | README.md written
+2026-07-07 02:35:46 | INFO     | storage_setup | storage_structure.md written
+2026-07-07 02:35:46 | INFO     | storage_setup | requirements.txt written
+2026-07-07 02:35:46 | INFO     | storage_setup | === Storage Setup COMPLETE ===
+2026-07-07 02:35:47 | INFO     | ingestion | ========== RecoMart Ingestion Pipeline START ==========
+2026-07-07 02:35:47 | INFO     | ingestion | Dataset: Amazon Reviews 2023 — Video Games
+2026-07-07 02:35:47 | INFO     | ingestion | === Ingesting ratings (user-item interactions) ===
+2026-07-07 02:35:47 | INFO     | ingestion | Reading JSONL: Video_Games.jsonl (0.7 MB)
+2026-07-07 02:35:47 | INFO     | ingestion | Raw records loaded: 5,000 | Columns: ['user_id', 'parent_asin', 'rating', 'timestamp', 'verified_purchase', 'helpful_vote']
+2026-07-07 02:35:47 | INFO     | ingestion | Rating range filter: 0 rows dropped
+2026-07-07 02:35:47 | ERROR    | ingestion | Ratings ingestion error: '>' not supported between instances of 'Timestamp' and 'float'
+Traceback (most recent call last):
+  File "/home/claude/recomart/src/ingestion/ingest_data.py", line 127, in ingest_ratings
+    if df["timestamp"].max() > 1e12:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: '>' not supported between instances of 'Timestamp' and 'float'
+2026-07-07 02:35:47 | INFO     | ingestion | === Ingesting product metadata (catalog) ===
+2026-07-07 02:35:47 | INFO     | ingestion | Reading JSONL: meta_Video_Games.jsonl (0.0 MB)
+2026-07-07 02:35:47 | INFO     | ingestion | Raw records loaded: 200 | Columns: ['parent_asin', 'title', 'price', 'store', 'categories', 'description']
+2026-07-07 02:35:47 | INFO     | ingestion | Deduplication: 0 duplicates removed → 200 products
+2026-07-07 02:35:47 | INFO     | ingestion | Products saved → products_20260707_023547.csv | MD5: f7fa0ffe965d44d9475615498a24defb
+2026-07-07 02:35:47 | DEBUG    | ingestion | Audit log updated → ingestion_audit.csv
+2026-07-07 02:35:47 | ERROR    | ingestion | ========== Ingestion PARTIAL/FAILED in 0.1s ==========
+2026-07-07 02:35:57 | INFO     | ingestion | ========== RecoMart Ingestion Pipeline START ==========
+2026-07-07 02:35:57 | INFO     | ingestion | Dataset: Amazon Reviews 2023 — Video Games
+2026-07-07 02:35:57 | INFO     | ingestion | === Ingesting ratings (user-item interactions) ===
+2026-07-07 02:35:57 | INFO     | ingestion | Reading JSONL: Video_Games.jsonl (0.7 MB)
+2026-07-07 02:35:57 | INFO     | ingestion | Raw records loaded: 5,000 | Columns: ['user_id', 'parent_asin', 'rating', 'timestamp', 'verified_purchase', 'helpful_vote']
+2026-07-07 02:35:57 | INFO     | ingestion | Rating range filter: 0 rows dropped
+2026-07-07 02:35:57 | INFO     | ingestion | Sampled: 500 users | 200 products | 5,000 interactions
+2026-07-07 02:35:57 | INFO     | ingestion | Ratings saved → ratings_20260707_023557.csv | MD5: 8485e4f44b4e4177383bc8e4ebfef62f
+2026-07-07 02:35:57 | DEBUG    | ingestion | Audit log updated → ingestion_audit.csv
+2026-07-07 02:35:57 | INFO     | ingestion | === Ingesting product metadata (catalog) ===
+2026-07-07 02:35:57 | INFO     | ingestion | Reading JSONL: meta_Video_Games.jsonl (0.0 MB)
+2026-07-07 02:35:57 | INFO     | ingestion | Raw records loaded: 200 | Columns: ['parent_asin', 'title', 'price', 'store', 'categories', 'description']
+2026-07-07 02:35:57 | INFO     | ingestion | Deduplication: 0 duplicates removed → 200 products
+2026-07-07 02:35:57 | INFO     | ingestion | Products saved → products_20260707_023557.csv | MD5: f7fa0ffe965d44d9475615498a24defb
+2026-07-07 02:35:57 | DEBUG    | ingestion | Audit log updated → ingestion_audit.csv
+2026-07-07 02:35:57 | INFO     | ingestion | ========== Ingestion COMPLETE in 0.1s ==========
+2026-07-07 02:35:57 | INFO     | ingestion |   Ratings  → ratings_20260707_023557.csv
+2026-07-07 02:35:57 | INFO     | ingestion |   Products → products_20260707_023557.csv
+2026-07-06 22:58:22 | INFO     | storage_setup | === RecoMart Storage Setup START ===
+2026-07-06 22:58:22 | INFO     | storage_setup | Created 14 directories
+2026-07-06 22:58:22 | INFO     | storage_setup | README.md written
+2026-07-06 22:58:22 | INFO     | storage_setup | storage_structure.md written
+2026-07-06 22:58:22 | INFO     | storage_setup | requirements.txt written
+2026-07-06 22:58:22 | INFO     | storage_setup | === Storage Setup COMPLETE ===
+2026-07-06 22:59:00 | INFO     | ingestion | ========== RecoMart Ingestion Pipeline START ==========
+2026-07-06 22:59:00 | INFO     | ingestion | Dataset: Amazon Reviews 2023 — Video Games
+2026-07-06 22:59:00 | INFO     | ingestion | === Ingesting ratings (user-item interactions) ===
+2026-07-06 22:59:00 | INFO     | ingestion | Reading JSONL: Video_Games.jsonl (2682.9 MB)
+2026-07-06 22:59:49 | INFO     | ingestion | Raw records loaded: 4,624,615 | Columns: ['rating', 'title', 'text', 'images', 'asin', 'parent_asin', 'user_id', 'timestamp', 'helpful_vote', 'verified_purchase']
+2026-07-06 22:59:49 | INFO     | ingestion | Rating range filter: 0 rows dropped
+2026-07-06 22:59:57 | INFO     | ingestion | Sampled: 10,000 users | 45,916 products | 268,463 interactions
+2026-07-06 22:59:57 | INFO     | ingestion | Ratings saved → ratings_20260707_025900.csv | MD5: d9c4806c49aebc00bac17c2d1c0cc5a7
+2026-07-06 22:59:57 | DEBUG    | ingestion | Audit log updated → ingestion_audit.csv
+2026-07-06 22:59:59 | INFO     | ingestion | === Ingesting product metadata (catalog) ===
+2026-07-06 22:59:59 | INFO     | ingestion | Reading JSONL: meta_Video_Games.jsonl (437.4 MB)
+2026-07-06 23:00:01 | INFO     | ingestion | Raw records loaded: 137,269 | Columns: ['main_category', 'title', 'average_rating', 'rating_number', 'features', 'description', 'price', 'images', 'videos', 'store', 'categories', 'details', 'parent_asin', 'bought_together', 'subtitle', 'author']
+2026-07-06 23:00:02 | INFO     | ingestion | Deduplication: 0 duplicates removed → 137,269 products
+2026-07-06 23:00:02 | INFO     | ingestion | Products saved → products_20260707_025959.csv | MD5: 756947899704af56b426655f22908cbf
+2026-07-06 23:00:02 | DEBUG    | ingestion | Audit log updated → ingestion_audit.csv
+2026-07-06 23:00:03 | INFO     | ingestion | ========== Ingestion COMPLETE in 63.4s ==========
+2026-07-06 23:00:03 | INFO     | ingestion |   Ratings  → ratings_20260707_025900.csv
+2026-07-06 23:00:03 | INFO     | ingestion |   Products → products_20260707_025959.csv
+2026-07-06 23:36:59 | INFO     | validation | ========== RecoMart Validation Pipeline START ==========
+2026-07-06 23:36:59 | INFO     | validation | Dataset: Amazon Reviews 2023 — Video Games
+2026-07-06 23:36:59 | INFO     | validation | =======================================================
+2026-07-06 23:36:59 | INFO     | validation | === Validating Ratings Dataset ===
+2026-07-06 23:36:59 | INFO     | validation | Loading: ratings_20260707_025900.csv
+2026-07-06 23:36:59 | INFO     | validation | Shape: 268,463 rows × 4 cols
+2026-07-06 23:36:59 | INFO     | validation | [ratings] Schema — PASS | Missing: [] | Extra: []
+2026-07-06 23:36:59 | INFO     | validation | [ratings] Missing values — PASS | No missing values
+2026-07-06 23:36:59 | INFO     | validation | [ratings] duplicate_rows — WARN | 5,548 duplicates found
+2026-07-06 23:36:59 | INFO     | validation | [ratings] duplicate_userId+productId — WARN | 9,923 duplicates found
+2026-07-06 23:36:59 | INFO     | validation | [ratings] Rating range [1–5] — PASS | 0 out-of-range values | Distribution: {1: 15327, 2: 12261, 3: 26140, 4: 50174, 5: 164561}
+2026-07-06 23:36:59 | INFO     | validation | [ratings] Timestamp validity — WARN | Range: 1999-11-10 → 2023-08-30 | Nulls: 0 | Out-of-window: 16
+2026-07-06 23:36:59 | INFO     | validation | [ratings] Sparsity — PASS | Users: 10,000 | Items: 45,916 | Interactions: 268,463 | Sparsity: 99.94% | Avg ratings/user: 26.8 | Avg ratings/item: 5.8
+2026-07-06 23:36:59 | INFO     | validation | === Ratings validation: 4/7 checks passed ===
+2026-07-06 23:36:59 | INFO     | validation | =======================================================
+2026-07-06 23:36:59 | INFO     | validation | === Validating Products Dataset ===
+2026-07-06 23:36:59 | INFO     | validation | Loading: products_20260707_025959.csv
+2026-07-06 23:36:59 | INFO     | validation | Shape: 137,269 rows × 6 cols
+2026-07-06 23:36:59 | INFO     | validation | [products] Schema — PASS | Missing: [] | Extra: []
+2026-07-06 23:36:59 | INFO     | validation | [products] Missing values — FAIL | title: 9 (0.01%); price: 75277 (54.84%); brand: 4375 (3.19%); category: 12637 (9.21%); description: 51740 (37.69%)
+2026-07-06 23:36:59 | INFO     | validation | [products] duplicate_productId — PASS | 0 duplicates found
+2026-07-06 23:36:59 | INFO     | validation | [products] Price range — PASS | Nulls: 75277 (54.8%) | Negatives: 0 | Zeros: 32 | Outliers (>3×p95): 365 | p50: $24.95 | p95: $150.65
+2026-07-06 23:36:59 | INFO     | validation | [products] Category coverage — PASS | Unique categories: 508 | Empty: 12637 (9.2%) | Top 5: {'Video Games > PC > Games': 17758, 'Video Games > PC > Accessories > Gaming Keyboards': 4736, 'Video Games > PC > Accessories > Headsets': 3945, 'Video Games > PC > Accessories > Gaming Mice': 3798, 'Video Games > Nintendo Switch > Accessories > Cases & Storage': 3196}
+2026-07-06 23:36:59 | INFO     | validation | === Products validation: 4/5 checks passed ===
+2026-07-06 23:36:59 | INFO     | validation | Report saved → /Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/reports/data_quality_report.md
+2026-07-06 23:36:59 | INFO     | validation | Summary CSV saved → /Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/reports/data_quality_summary.csv
+2026-07-06 23:36:59 | INFO     | validation | ========== Validation COMPLETE ==========
+2026-07-06 23:36:59 | INFO     | validation | Result: 8/12 checks passed
+2026-07-06 23:36:59 | INFO     | validation | Report: /Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/reports/data_quality_report.md
+2026-07-07 00:15:08 | INFO     | validation | ========== RecoMart Validation Pipeline START ==========
+2026-07-07 00:15:08 | INFO     | validation | Dataset: Amazon Reviews 2023 — Video Games
+2026-07-07 00:15:08 | INFO     | validation | =======================================================
+2026-07-07 00:15:08 | INFO     | validation | === Validating Ratings Dataset ===
+2026-07-07 00:15:08 | INFO     | validation | Loading: ratings_20260707_025900.csv
+2026-07-07 00:15:08 | INFO     | validation | Shape: 268,463 rows × 4 cols
+2026-07-07 00:15:08 | INFO     | validation | [ratings] Schema — PASS | Missing: [] | Extra: []
+2026-07-07 00:15:08 | INFO     | validation | [ratings] Missing values — PASS | No missing values
+2026-07-07 00:15:08 | INFO     | validation | [ratings] duplicate_rows — WARN | 5,548 duplicates found
+2026-07-07 00:15:08 | INFO     | validation | [ratings] duplicate_userId+productId — WARN | 9,923 duplicates found
+2026-07-07 00:15:08 | INFO     | validation | [ratings] Rating range [1–5] — PASS | 0 out-of-range values | Distribution: {1: 15327, 2: 12261, 3: 26140, 4: 50174, 5: 164561}
+2026-07-07 00:15:08 | INFO     | validation | [ratings] Timestamp validity — WARN | Range: 1999-11-10 → 2023-08-30 | Nulls: 0 | Out-of-window: 16
+2026-07-07 00:15:08 | INFO     | validation | [ratings] Sparsity — PASS | Users: 10,000 | Items: 45,916 | Interactions: 268,463 | Sparsity: 99.94% | Avg ratings/user: 26.8 | Avg ratings/item: 5.8
+2026-07-07 00:15:08 | INFO     | validation | === Ratings validation: 4/7 checks passed ===
+2026-07-07 00:15:08 | INFO     | validation | =======================================================
+2026-07-07 00:15:08 | INFO     | validation | === Validating Products Dataset ===
+2026-07-07 00:15:08 | INFO     | validation | Loading: products_20260707_025959.csv
+2026-07-07 00:15:09 | INFO     | validation | Shape: 137,269 rows × 6 cols
+2026-07-07 00:15:09 | INFO     | validation | [products] Schema — PASS | Missing: [] | Extra: []
+2026-07-07 00:15:09 | INFO     | validation | [products] Missing values — FAIL | title: 9 (0.01%); price: 75277 (54.84%); brand: 4375 (3.19%); category: 12637 (9.21%); description: 51740 (37.69%)
+2026-07-07 00:15:09 | INFO     | validation | [products] duplicate_productId — PASS | 0 duplicates found
+2026-07-07 00:15:09 | INFO     | validation | [products] Price range — PASS | Nulls: 75277 (54.8%) | Negatives: 0 | Zeros: 32 | Outliers (>3×p95): 365 | p50: $24.95 | p95: $150.65
+2026-07-07 00:15:09 | INFO     | validation | [products] Category coverage — PASS | Unique categories: 508 | Empty: 12637 (9.2%) | Top 5: {'Video Games > PC > Games': 17758, 'Video Games > PC > Accessories > Gaming Keyboards': 4736, 'Video Games > PC > Accessories > Headsets': 3945, 'Video Games > PC > Accessories > Gaming Mice': 3798, 'Video Games > Nintendo Switch > Accessories > Cases & Storage': 3196}
+2026-07-07 00:15:09 | INFO     | validation | === Products validation: 4/5 checks passed ===
+2026-07-07 00:15:09 | INFO     | validation | =======================================================
+2026-07-07 00:15:11 | INFO     | validation | [GE] Running Great Expectations suite on 'ratings'...
+2026-07-07 00:15:11 | INFO     | validation | [GE] [ratings] PASS — userId column exists
+2026-07-07 00:15:11 | INFO     | validation | [GE] [ratings] PASS — productId column exists
+2026-07-07 00:15:11 | INFO     | validation | [GE] [ratings] FAIL — rating column exists
+2026-07-07 00:15:11 | INFO     | validation | [GE] [ratings] PASS — timestamp column exists
+2026-07-07 00:15:11 | INFO     | validation | [GE] [ratings] PASS — userId has no nulls
+2026-07-07 00:15:11 | INFO     | validation | [GE] [ratings] PASS — productId has no nulls
+2026-07-07 00:15:11 | INFO     | validation | [GE] [ratings] PASS — rating has no nulls
+2026-07-07 00:15:11 | INFO     | validation | [GE] [ratings] PASS — rating values in range [1, 5]
+2026-07-07 00:15:11 | INFO     | validation | [GE] [ratings] PASS — row count between 10K and 10M
+2026-07-07 00:15:11 | INFO     | validation | [GE] [ratings] PASS — userId matches Amazon reviewer ID format
+2026-07-07 00:15:11 | INFO     | validation | [GE] [ratings] Suite complete — 9/10 passed
+2026-07-07 00:15:11 | INFO     | validation | [GE] Results saved → ge_results_ratings.csv
+2026-07-07 00:15:11 | INFO     | validation | [GE] Running Great Expectations suite on 'products'...
+2026-07-07 00:15:11 | INFO     | validation | [GE] [products] PASS — productId column exists
+2026-07-07 00:15:11 | INFO     | validation | [GE] [products] PASS — title column exists
+2026-07-07 00:15:11 | INFO     | validation | [GE] [products] PASS — price column exists
+2026-07-07 00:15:11 | INFO     | validation | [GE] [products] PASS — productId has no nulls
+2026-07-07 00:15:11 | INFO     | validation | [GE] [products] FAIL — productId values are unique
+2026-07-07 00:15:11 | INFO     | validation | [GE] [products] PASS — title has no nulls
+2026-07-07 00:15:11 | INFO     | validation | [GE] [products] PASS — price in range [0, 10000] for 90%+ rows
+2026-07-07 00:15:11 | INFO     | validation | [GE] [products] PASS — product count between 1K and 5M
+2026-07-07 00:15:11 | INFO     | validation | [GE] [products] Suite complete — 7/8 passed
+2026-07-07 00:15:11 | INFO     | validation | [GE] Results saved → ge_results_products.csv
+2026-07-07 00:15:11 | INFO     | validation | Report saved → /Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/reports/data_quality_report.md
+2026-07-07 00:15:11 | INFO     | validation | Summary CSV saved → /Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/reports/data_quality_summary.csv
+2026-07-07 00:15:11 | INFO     | validation | [GE] Summary appended to report
+2026-07-07 00:15:11 | INFO     | validation | ========== Validation COMPLETE ==========
+2026-07-07 00:15:11 | INFO     | validation | Pandas checks : 8/12 passed
+2026-07-07 00:15:11 | INFO     | validation | GE checks     : 16/18 passed
+2026-07-07 00:15:11 | INFO     | validation | Report: /Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/reports/data_quality_report.md
+2026-07-07 00:40:33 | INFO     | feature_engineering | ========== Feature Engineering Pipeline START ==========
+2026-07-07 00:40:33 | INFO     | feature_engineering | Loaded ratings  : (258524, 4)
+2026-07-07 00:40:33 | INFO     | feature_engineering | Loaded products : (137269, 6)
+2026-07-07 00:40:33 | INFO     | feature_engineering | Building user features...
+2026-07-07 00:40:33 | INFO     | feature_engineering | User features   : (10000, 7) — ['userId', 'user_rating_count', 'user_avg_rating', 'user_rating_std', 'user_unique_items', 'user_recency_days', 'user_category_diversity']
+2026-07-07 00:40:33 | INFO     | feature_engineering | Building item features...
+2026-07-07 00:40:34 | INFO     | feature_engineering | Item features   : (45914, 11) — ['productId', 'item_rating_count', 'item_avg_rating', 'item_rating_std', 'item_unique_users', 'price', 'category', 'brand', 'category_encoded', 'brand_encoded', 'price_normalized']
+2026-07-07 00:40:34 | INFO     | feature_engineering | Building interaction features...
+2026-07-07 00:40:34 | INFO     | feature_engineering | Interaction features: (258524, 7) — ['userId', 'productId', 'rating', 'timestamp', 'rating_normalized', 'days_since_epoch', 'user_item_rating_diff']
+2026-07-07 00:40:34 | INFO     | feature_engineering | Building co-occurrence matrix (top 500 items)...
+2026-07-07 00:40:34 | INFO     | feature_engineering | Co-occurrence pairs: 1,500
+2026-07-07 00:40:34 | INFO     | feature_engineering | [DB] user_features: 10,000 rows
+2026-07-07 00:40:34 | INFO     | feature_engineering | [DB] item_features: 45,914 rows
+2026-07-07 00:40:34 | INFO     | feature_engineering | [DB] interaction_features: 258,524 rows
+2026-07-07 00:40:34 | INFO     | feature_engineering | [DB] cooccurrence: 1,500 rows
+2026-07-07 00:40:34 | INFO     | feature_engineering | SQLite DB saved → /Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/feature_store/recomart_features.db
+2026-07-07 00:40:34 | INFO     | feature_engineering | Feature metadata → /Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/feature_store/feature_metadata.json
+2026-07-07 00:40:34 | INFO     | feature_engineering | Feature summary → /Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/reports/feature_engineering_summary.md
+2026-07-07 00:40:34 | INFO     | feature_engineering | ========== Feature Engineering COMPLETE ==========
+2026-07-07 00:40:34 | INFO     | feature_engineering | DB         → /Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/feature_store/recomart_features.db
+2026-07-07 00:40:34 | INFO     | feature_engineering | Metadata   → /Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/feature_store/feature_metadata.json
+2026-07-07 00:40:34 | INFO     | feature_engineering | 
+--- Sample feature retrieval (first 3 users) ---
+2026-07-07 00:40:34 | INFO     | feature_engineering | 
+                      userId  user_rating_count  user_avg_rating  user_rating_std  user_unique_items  user_recency_days  user_category_diversity
+AE22CFXT3QZKUQJORVTGL3VQXAAA                 15           4.7333           0.4577                 15              191.2                       12
+AE2324DZTYWS3LKNTEKJJZYHSQXQ                 25           3.4800           1.6361                 25             3238.9                       10
+AE23IB5TIHEXKMKX7K47P5GUKABA                 17           4.1765           1.3800                 17              290.9                       14
+2026-07-07 00:59:46 | INFO     | feature_store | ========== Feature Store Demo START ==========
+2026-07-07 00:59:46 | INFO     | feature_store | 
+[1] Registering feature version...
+2026-07-07 00:59:46 | INFO     | feature_store | [FeatureStore] Version registered: v1.0 (id=1) — 10,000 users, 45,914 items, 258,524 interactions
+2026-07-07 00:59:46 | INFO     | feature_store | 
+[2] Listing all versions...
+2026-07-07 00:59:46 | INFO     | feature_store | 
+[3] Retrieving sample user features...
+2026-07-07 00:59:46 | INFO     | feature_store | [FeatureStore] get_user_features → 5 rows
+2026-07-07 00:59:46 | INFO     | feature_store | 
+[4] Retrieving sample item features...
+2026-07-07 00:59:46 | INFO     | feature_store | [FeatureStore] get_item_features → 3 rows
+2026-07-07 00:59:46 | INFO     | feature_store | 
+[5] Building training set (10% sample)...
+2026-07-07 00:59:47 | INFO     | feature_store | [FeatureStore] get_training_set → 25,852 rows × 19 features
+2026-07-07 00:59:47 | INFO     | feature_store | 
+[6] Inference feature retrieval...
+2026-07-07 00:59:47 | INFO     | feature_store | [FeatureStore] get_inference_features → user='AE22CFXT3QZKUQJORVTGL3VQXAAA' × 100 items = 100 rows
+2026-07-07 00:59:47 | INFO     | feature_store | 
+[7] Co-occurrence lookup...
+2026-07-07 00:59:47 | INFO     | feature_store | [FeatureStore] get_cooccurrence('B00000JRSB') → 3 items
+2026-07-07 00:59:47 | INFO     | feature_store | 
+[8] Feature statistics...
+2026-07-07 00:59:47 | INFO     | feature_store | [FeatureStore] get_feature_stats('user_features') — 10,000 rows
+2026-07-07 00:59:47 | INFO     | feature_store | 
+[9] Feature metadata (user_features)...
+2026-07-07 00:59:47 | INFO     | feature_store | Feature store docs → /Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/reports/feature_store_documentation.md
+2026-07-07 00:59:47 | INFO     | feature_store | 
+========== Feature Store Demo COMPLETE ==========
+2026-07-07 01:16:59 | INFO     | dvc_versioning | ========== DVC Versioning Setup START ==========
+2026-07-07 01:16:59 | INFO     | dvc_versioning | Initializing git repository...
+2026-07-07 01:16:59 | INFO     | dvc_versioning | $ git init
+2026-07-07 01:16:59 | INFO     | dvc_versioning | Initialized empty Git repository in /Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/.git/
+2026-07-07 01:16:59 | INFO     | dvc_versioning | $ git add .gitignore
+2026-07-07 01:16:59 | INFO     | dvc_versioning | $ git commit -m "Initial commit — add .gitignore"
+2026-07-07 01:16:59 | ERROR    | dvc_versioning | Author identity unknown
+
+*** Please tell me who you are.
+
+Run
+
+  git config --global user.email "you@example.com"
+  git config --global user.name "Your Name"
+
+to set your account's default identity.
+Omit --global to set the identity only in this repository.
+
+fatal: unable to auto-detect email address (got 'thanigaivel@ThanigavelsMini.(none)')
+2026-07-07 01:16:59 | INFO     | dvc_versioning | Git initialized ✅
+2026-07-07 01:16:59 | INFO     | dvc_versioning | Initializing DVC...
+2026-07-07 01:16:59 | INFO     | dvc_versioning | $ dvc init
+2026-07-07 01:17:01 | INFO     | dvc_versioning | Initialized DVC repository.
+
+You can now commit the changes to git.
+
++---------------------------------------------------------------------+
+|                                                                     |
+|        DVC has enabled anonymous aggregate usage analytics.         |
+|     Read the analytics documentation (and how to opt-out) here:     |
+|             <https://dvc.org/doc/user-guide/analytics>              |
+|                                                                     |
++---------------------------------------------------------------------+
+
+What's next?
+------------
+- Check out the documentation: <https://dvc.org/doc>
+- Get help and share ideas: <https://dvc.org/chat>
+- Star us on GitHub: <https://github.com/treeverse/dvc>
+2026-07-07 01:17:01 | INFO     | dvc_versioning | $ git add .dvc .dvcignore
+2026-07-07 01:17:01 | INFO     | dvc_versioning | $ git commit -m "Initialize DVC"
+2026-07-07 01:17:01 | ERROR    | dvc_versioning | Author identity unknown
+
+*** Please tell me who you are.
+
+Run
+
+  git config --global user.email "you@example.com"
+  git config --global user.name "Your Name"
+
+to set your account's default identity.
+Omit --global to set the identity only in this repository.
+
+fatal: unable to auto-detect email address (got 'thanigaivel@ThanigavelsMini.(none)')
+2026-07-07 01:17:01 | INFO     | dvc_versioning | DVC initialized ✅
+2026-07-07 01:17:01 | INFO     | dvc_versioning | Setting up DVC remote → /Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/.dvc_remote
+2026-07-07 01:17:01 | INFO     | dvc_versioning | $ dvc remote add -d localremote "/Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/.dvc_remote"
+2026-07-07 01:17:01 | INFO     | dvc_versioning | Setting 'localremote' as a default remote.
+2026-07-07 01:17:01 | INFO     | dvc_versioning | $ git add .dvc/config
+2026-07-07 01:17:01 | INFO     | dvc_versioning | $ git commit -m "Configure DVC local remote"
+2026-07-07 01:17:01 | ERROR    | dvc_versioning | Author identity unknown
+
+*** Please tell me who you are.
+
+Run
+
+  git config --global user.email "you@example.com"
+  git config --global user.name "Your Name"
+
+to set your account's default identity.
+Omit --global to set the identity only in this repository.
+
+fatal: unable to auto-detect email address (got 'thanigaivel@ThanigavelsMini.(none)')
+2026-07-07 01:17:01 | INFO     | dvc_versioning | DVC remote configured ✅
+2026-07-07 01:17:01 | INFO     | dvc_versioning | Adding files to DVC tracking...
+2026-07-07 01:17:01 | INFO     | dvc_versioning | $ dvc add "data/raw/interactions/ratings_20260707_025900.csv"
+2026-07-07 01:17:01 | INFO     | dvc_versioning | To track the changes with git, run:
+
+	git add data/raw/interactions/ratings_20260707_025900.csv.dvc data/raw/interactions/.gitignore
+
+To enable auto staging, run:
+
+	dvc config core.autostage true
+2026-07-07 01:17:01 | INFO     | dvc_versioning | Tracked: ratings_20260707_025900.csv
+2026-07-07 01:17:01 | INFO     | dvc_versioning | $ dvc add "data/raw/products/products_20260707_025959.csv"
+2026-07-07 01:17:02 | INFO     | dvc_versioning | To track the changes with git, run:
+
+	git add data/raw/products/products_20260707_025959.csv.dvc data/raw/products/.gitignore
+
+To enable auto staging, run:
+
+	dvc config core.autostage true
+2026-07-07 01:17:02 | INFO     | dvc_versioning | Tracked: products_20260707_025959.csv
+2026-07-07 01:17:02 | INFO     | dvc_versioning | $ dvc add data/processed
+2026-07-07 01:17:02 | INFO     | dvc_versioning | To track the changes with git, run:
+
+	git add data/.gitignore data/processed.dvc
+
+To enable auto staging, run:
+
+	dvc config core.autostage true
+2026-07-07 01:17:02 | INFO     | dvc_versioning | Tracked: data/processed/
+2026-07-07 01:17:02 | INFO     | dvc_versioning | $ dvc add "feature_store/recomart_features.db"
+2026-07-07 01:17:02 | INFO     | dvc_versioning | To track the changes with git, run:
+
+	git add feature_store/recomart_features.db.dvc feature_store/.gitignore
+
+To enable auto staging, run:
+
+	dvc config core.autostage true
+2026-07-07 01:17:02 | INFO     | dvc_versioning | Tracked: recomart_features.db
+2026-07-07 01:17:02 | INFO     | dvc_versioning | $ git add .
+2026-07-07 01:17:02 | INFO     | dvc_versioning | $ git commit -m "Track data files with DVC: 4 files"
+2026-07-07 01:17:02 | ERROR    | dvc_versioning | Author identity unknown
+
+*** Please tell me who you are.
+
+Run
+
+  git config --global user.email "you@example.com"
+  git config --global user.name "Your Name"
+
+to set your account's default identity.
+Omit --global to set the identity only in this repository.
+
+fatal: unable to auto-detect email address (got 'thanigaivel@ThanigavelsMini.(none)')
+2026-07-07 01:17:02 | INFO     | dvc_versioning | DVC tracking: 4 files/folders ✅
+2026-07-07 01:17:02 | INFO     | dvc_versioning | Pushing data to DVC remote...
+2026-07-07 01:17:02 | INFO     | dvc_versioning | $ dvc push
+2026-07-07 01:17:03 | INFO     | dvc_versioning | 7 files pushed
+2026-07-07 01:17:03 | INFO     | dvc_versioning | DVC push complete ✅
+2026-07-07 01:17:03 | INFO     | dvc_versioning | Lineage metadata → /Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/feature_store/pipeline_lineage.json
+2026-07-07 01:17:03 | INFO     | dvc_versioning | 
+--- DVC Status ---
+2026-07-07 01:17:03 | INFO     | dvc_versioning | $ dvc status
+2026-07-07 01:17:03 | INFO     | dvc_versioning | Data and pipelines are up to date.
+2026-07-07 01:17:03 | INFO     | dvc_versioning | 
+--- Git Log (last 5 commits) ---
+2026-07-07 01:17:03 | INFO     | dvc_versioning | $ git log --oneline -5
+2026-07-07 01:17:03 | DEBUG    | dvc_versioning | fatal: your current branch 'main' does not have any commits yet
+2026-07-07 01:17:03 | INFO     | dvc_versioning | 
+--- DVC Tracked Files ---
+2026-07-07 01:17:03 | INFO     | dvc_versioning | $ dvc list . --dvc-only -R
+2026-07-07 01:17:03 | INFO     | dvc_versioning | data/processed/.gitkeep
+data/processed/cleaned_products.csv
+data/processed/cleaned_ratings.csv
+data/raw/interactions/ratings_20260707_025900.csv
+data/raw/products/products_20260707_025959.csv
+feature_store/recomart_features.db
+2026-07-07 01:17:03 | INFO     | dvc_versioning | Versioning docs → /Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/reports/versioning_documentation.md
+2026-07-07 01:17:03 | INFO     | dvc_versioning | ========== DVC Versioning Setup COMPLETE ==========
+2026-07-07 01:17:03 | INFO     | dvc_versioning | Tracked files : 4
+2026-07-07 01:17:03 | INFO     | dvc_versioning | Lineage JSON  : /Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/feature_store/pipeline_lineage.json
+2026-07-07 01:17:03 | INFO     | dvc_versioning | Docs          : /Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/reports/versioning_documentation.md

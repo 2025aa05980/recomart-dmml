@@ -1,0 +1,167 @@
+{
+  "version": "1.0",
+  "created_at": "2026-07-07T04:40:34.567291+00:00",
+  "dataset": "Amazon Reviews 2023 \u2014 Video Games",
+  "features": {
+    "user_features": {
+      "source": "cleaned_ratings.csv",
+      "n_features": 6,
+      "n_records": 10000,
+      "columns": {
+        "userId": {
+          "type": "str",
+          "description": "Amazon reviewer ID (PK)"
+        },
+        "user_rating_count": {
+          "type": "int",
+          "description": "Total ratings given by user"
+        },
+        "user_avg_rating": {
+          "type": "float",
+          "description": "Mean rating given by user (1\u20135)"
+        },
+        "user_rating_std": {
+          "type": "float",
+          "description": "Std dev of user ratings (consistency)"
+        },
+        "user_unique_items": {
+          "type": "int",
+          "description": "Distinct products rated"
+        },
+        "user_recency_days": {
+          "type": "float",
+          "description": "Days since last rating (lower = more recent)"
+        },
+        "user_category_diversity": {
+          "type": "int",
+          "description": "Number of distinct categories rated"
+        }
+      }
+    },
+    "item_features": {
+      "source": "cleaned_ratings.csv + cleaned_products.csv",
+      "n_features": 10,
+      "n_records": 45914,
+      "columns": {
+        "productId": {
+          "type": "str",
+          "description": "Amazon ASIN (PK)"
+        },
+        "item_rating_count": {
+          "type": "int",
+          "description": "Total ratings received"
+        },
+        "item_avg_rating": {
+          "type": "float",
+          "description": "Mean rating received (quality signal)"
+        },
+        "item_rating_std": {
+          "type": "float",
+          "description": "Std dev of ratings (controversy score)"
+        },
+        "item_unique_users": {
+          "type": "int",
+          "description": "Distinct users who rated"
+        },
+        "price_normalized": {
+          "type": "float",
+          "description": "MinMaxScaler price in [0,1]",
+          "scaler": "MinMaxScaler"
+        },
+        "category_encoded": {
+          "type": "int",
+          "description": "LabelEncoder category index",
+          "encoder": "LabelEncoder",
+          "n_classes": 479
+        },
+        "brand_encoded": {
+          "type": "int",
+          "description": "LabelEncoder brand index",
+          "encoder": "LabelEncoder",
+          "n_classes": 6901
+        }
+      },
+      "encoders": {
+        "category": {
+          "type": "LabelEncoder",
+          "n_classes": 479,
+          "sample_classes": [
+            "Purchase Circles > Geography > United States > Michigan > Carleton",
+            "Unknown",
+            "Video Games > AMG PS Vita Test Node",
+            "Video Games > Bestselling in Renewed Video Games",
+            "Video Games > Bonus Offers - Up to $20 Credit"
+          ]
+        },
+        "brand": {
+          "type": "LabelEncoder",
+          "n_classes": 6901,
+          "sample_classes": [
+            "(RED)",
+            "1 C Game Studios",
+            "11 Bit Studios",
+            "11.48",
+            "110 Industries"
+          ]
+        },
+        "price": {
+          "type": "MinMaxScaler",
+          "feature_range": [
+            0,
+            1
+          ]
+        }
+      }
+    },
+    "interaction_features": {
+      "source": "cleaned_ratings.csv + item_features",
+      "n_features": 5,
+      "n_records": 258524,
+      "columns": {
+        "userId": {
+          "type": "str",
+          "description": "Amazon reviewer ID (FK)"
+        },
+        "productId": {
+          "type": "str",
+          "description": "Amazon ASIN (FK)"
+        },
+        "rating": {
+          "type": "float",
+          "description": "Raw star rating (1\u20135)"
+        },
+        "rating_normalized": {
+          "type": "float",
+          "description": "Rating scaled to [0,1]"
+        },
+        "days_since_epoch": {
+          "type": "int",
+          "description": "Timestamp in days (temporal feature)"
+        },
+        "user_item_rating_diff": {
+          "type": "float",
+          "description": "User rating minus item avg (relative sentiment)"
+        }
+      }
+    },
+    "cooccurrence": {
+      "source": "cleaned_ratings.csv",
+      "description": "Item-item co-occurrence scores from user interaction overlap",
+      "top_n_items": 500,
+      "columns": {
+        "productId": {
+          "type": "str",
+          "description": "Source item ASIN"
+        },
+        "co_productId": {
+          "type": "str",
+          "description": "Co-occurring item ASIN"
+        },
+        "cooc_score": {
+          "type": "float",
+          "description": "Number of shared users who rated both"
+        }
+      }
+    }
+  }
+}

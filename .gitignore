@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# DVC
+/dvc_remote/
+
+# Data (large files — tracked by DVC)
+data/raw/interactions/*.jsonl
+data/raw/products/*.jsonl
+
+# Models
+*.pkl
+
+# Jupyter
+.ipynb_checkpoints/
+
+# MacOS
+.DS_Store
