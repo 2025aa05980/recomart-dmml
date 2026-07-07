@@ -1,7 +1,7 @@
 # Data Quality Report — RecoMart Pipeline
 **Task 4 | DMML Assignment 1 | Group 37**
 Student: Thanigaivel S | `2025aa05980@wilp.bits-pilani.ac.in`
-Generated: 2026-07-07 04:15 UTC
+Generated: 2026-07-07 06:50 UTC
 Dataset: Amazon Reviews 2023 — Video Games
 
 ---
@@ -110,29 +110,3 @@ Warnings relate to expected characteristics of e-commerce interaction data
 Data Preparation stage (Task 5).
 
 The dataset is **approved for downstream processing**.
-
----
-## 5. Great Expectations Suite Results
-Framework: `great_expectations`  
-Total expectations: 18 | Passed: 16 | Failed: 2
-
-| Dataset | Expectation | Result |
-|---------|-------------|--------|
-| ratings | userId column exists | ✅ PASS |
-| ratings | productId column exists | ✅ PASS |
-| ratings | rating column exists | ❌ FAIL |
-| ratings | timestamp column exists | ✅ PASS |
-| ratings | userId has no nulls | ✅ PASS |
-| ratings | productId has no nulls | ✅ PASS |
-| ratings | rating has no nulls | ✅ PASS |
-| ratings | rating values in range [1, 5] | ✅ PASS |
-| ratings | row count between 10K and 10M | ✅ PASS |
-| ratings | userId matches Amazon reviewer ID format | ✅ PASS |
-| products | productId column exists | ✅ PASS |
-| products | title column exists | ✅ PASS |
-| products | price column exists | ✅ PASS |
-| products | productId has no nulls | ✅ PASS |
-| products | productId values are unique | ❌ FAIL |
-| products | title has no nulls | ✅ PASS |
-| products | price in range [0, 10000] for 90%+ rows | ✅ PASS |
-| products | product count between 1K and 5M | ✅ PASS |
