@@ -19,3 +19,5 @@ data/raw/products/*.jsonl
 
 # MacOS
 .DS_Store
+.dvc_remote/
+anaconda_projects/
