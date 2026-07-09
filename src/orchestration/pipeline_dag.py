@@ -79,32 +79,101 @@ def load_latest_csv(directory: Path, prefix: str) -> pd.DataFrame:
     return pd.read_csv(str(files[0])), files[0].name
 
 
+# ── Task 0: API Server ────────────────────────────────────────────────────────
+
+@task(
+    name="start_api_server",
+    description="Start the RecoMart Product Catalog REST API server",
+    tags=["ingestion", "api"],
+)
+def task_start_api_server() -> dict:
+    """
+    Start the local Flask REST API server as a background process.
+    The ingestion task calls this API to fetch product data (Source Type 2).
+    """
+    logger = get_run_logger()
+    logger.info("=== Task: Start Product Catalog REST API ===")
+    import subprocess, sys, time as _time
+
+    try:
+        # Check if already running
+        try:
+            import requests as _req
+            r = _req.get("http://127.0.0.1:8080/api/health", timeout=2)
+            if r.status_code == 200:
+                logger.info("API server already running ✅")
+                return {"status": "success", "message": "already running",
+                        "url": "http://127.0.0.1:8080", "elapsed": 0}
+        except Exception:
+            pass
+
+        # Start server as background process
+        proc = subprocess.Popen(
+            [sys.executable,
+             str(BASE_DIR / "src" / "ingestion" / "api_server.py")],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        # Wait for server to be ready
+        for _ in range(10):
+            _time.sleep(1)
+            try:
+                import requests as _req
+                r = _req.get("http://127.0.0.1:8080/api/health", timeout=2)
+                if r.status_code == 200:
+                    data = r.json()
+                    logger.info(
+                        f"API server started (pid={proc.pid}) ✅ | "
+                        f"Products: {data.get('products_loaded'):,}"
+                    )
+                    return {
+                        "status":  "success",
+                        "pid":     proc.pid,
+                        "url":     "http://127.0.0.1:8080",
+                        "products": data.get("products_loaded", 0),
+                        "elapsed": 0,
+                    }
+            except Exception:
+                continue
+
+        logger.warning("API server did not start in time — ingestion will skip API source")
+        return {"status": "warning", "message": "server not ready", "elapsed": 0}
+
+    except Exception as e:
+        logger.error(f"API server start failed: {e}")
+        return {"status": "failed", "error": str(e), "elapsed": 0}
+
+
 # ── Task 1: Data Ingestion ────────────────────────────────────────────────────
 
 @task(
     name="ingest_data",
-    description="Ingest ratings and product metadata from JSONL sources",
+    description="Ingest ratings (JSONL file) and products (JSONL file + REST API)",
     retries=2,
     retry_delay_seconds=10,
     tags=["ingestion", "data"],
 )
 def task_ingest_data() -> dict:
     logger = get_run_logger()
-    logger.info("=== Task: Data Ingestion ===")
+    logger.info("=== Task: Data Ingestion (File + REST API) ===")
     start = time.time()
 
     try:
         from src.ingestion.ingest_data import run_ingestion
-        r_path, p_path = run_ingestion()
+        r_path, p_path, api_path = run_ingestion(include_api=True)
         elapsed = time.time() - start
 
         result = {
             "status":   "success",
-            "ratings":  str(r_path) if r_path else None,
-            "products": str(p_path) if p_path else None,
+            "ratings":  str(r_path)   if r_path   else None,
+            "products": str(p_path)   if p_path   else None,
+            "api_products": str(api_path) if api_path else "skipped",
             "elapsed":  round(elapsed, 1),
         }
         logger.info(f"Ingestion complete in {elapsed:.1f}s ✅")
+        logger.info(f"  Source 1a JSONL ratings  → {Path(r_path).name if r_path else 'failed'}")
+        logger.info(f"  Source 1b JSONL products → {Path(p_path).name if p_path else 'failed'}")
+        logger.info(f"  Source 2  REST API       → {Path(api_path).name if api_path else 'skipped'}")
         return result
 
     except Exception as e:
@@ -388,7 +457,7 @@ def task_pipeline_summary(
         ("train_models",         model_r),
     ]
 
-    all_success = all(r.get("status") in ("success", "skipped") for _, r in tasks)
+    all_success = all(r.get("status") == "success" for _, r in tasks)
 
     # Log summary table
     logger.info(f"\n{'Task':<25} {'Status':<10} {'Time(s)':<10}")
@@ -499,6 +568,11 @@ def recomart_pipeline(
                 f"skip_training={skip_training}")
     logger.info("=" * 60)
 
+    # ── Stage 0: Start API server ─────────────────────────────────────────────
+    if not skip_ingestion:
+        api_server_r = task_start_api_server()
+        logger.info(f"API server: {api_server_r.get('status')}")
+    
     # ── Stage 1: Ingestion ────────────────────────────────────────────────────
     if skip_ingestion:
         logger.info("Skipping ingestion (skip_ingestion=True)")
@@ -529,7 +603,7 @@ def recomart_pipeline(
     summary = task_pipeline_summary(
         ingest_r, validate_r, prepare_r,
         feature_r, store_r, model_r,
-        pipeline_start
+        pipeline_start,
     )
 
     logger.info("=" * 60)

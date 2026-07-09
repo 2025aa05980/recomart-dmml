@@ -2,12 +2,19 @@
 Task 2: Data Ingestion Script — RecoMart Pipeline
 Dataset: Amazon Reviews 2023 — Video Games (JSONL format)
 
-Two ingestion sources:
-  1. Video_Games.jsonl      — user-item interactions (ratings)
-  2. meta_Video_Games.jsonl — product metadata (catalog)
+Three ingestion sources (two types):
+  Source Type 1 — File-based (JSONL):
+    1. Video_Games.jsonl      — user-item interactions (ratings)
+    2. meta_Video_Games.jsonl — product metadata (catalog)
+
+  Source Type 2 — REST API:
+    3. RecoMart Product Catalog API (http://localhost:8080)
+       Serves enriched product data with rating stats
+       Start server: python src/ingestion/api_server.py
 
 Features:
   - JSONL parsing (pandas read_json with lines=True)
+  - REST API ingestion (requests + pagination)
   - Retry logic (3 attempts with backoff)
   - Structured logging + audit trail (MD5 checksum)
   - Timestamped raw file storage (data lake layout)
@@ -306,32 +313,155 @@ def _write_audit_log(source: str, path: Path, rows: int, checksum: str):
     log.debug(f"Audit log updated → {log_path.name}")
 
 
+# ── Source 3: REST API ingestion ──────────────────────────────────────────────
+
+API_BASE_URL  = "http://127.0.0.1:8080"
+API_PAGE_LIMIT = 100   # records per API page
+
+
+def ingest_api_products() -> Path | None:
+    """
+    Ingest product catalog from the RecoMart REST API (Source Type 2).
+
+    Calls the local Flask API server (api_server.py) with pagination,
+    collecting all available products across multiple pages.
+
+    API endpoint: GET /api/products?page=N&limit=100
+    Output: data/raw/products/api_products_YYYYMMDD_HHMMSS.csv
+
+    Note: Start api_server.py before running this function.
+    """
+    log.info("=== Ingesting product catalog via REST API ===")
+    log.info(f"API base URL: {API_BASE_URL}")
+    ts   = timestamp()
+    dest = PRODUCTS_DIR / f"api_products_{ts}.csv"
+    PRODUCTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    # ── Health check ──────────────────────────────────────────────────────────
+    try:
+        health = requests.get(
+            f"{API_BASE_URL}/api/health", timeout=5)
+        health.raise_for_status()
+        health_data = health.json()
+        log.info(f"API health: {health_data.get('status')} | "
+                 f"Products available: {health_data.get('products_loaded'):,}")
+    except Exception as e:
+        log.warning(f"API server not reachable: {e}")
+        log.warning("Start server with: python src/ingestion/api_server.py")
+        log.warning("Skipping REST API ingestion — using JSONL source only")
+        return None
+
+    # ── Paginated fetch ───────────────────────────────────────────────────────
+    all_records = []
+    page        = 1
+    total_pages = 1   # updated after first response
+
+    while page <= total_pages:
+        for attempt in range(1, 4):
+            try:
+                resp = requests.get(
+                    f"{API_BASE_URL}/api/products",
+                    params={"page": page, "limit": API_PAGE_LIMIT},
+                    timeout=30,
+                )
+                resp.raise_for_status()
+                data       = resp.json()
+                records    = data.get("data", [])
+                pagination = data.get("pagination", {})
+                total_pages = pagination.get("pages", 1)
+
+                all_records.extend(records)
+                log.info(f"API page {page}/{total_pages} → "
+                         f"{len(records)} records fetched")
+                break
+
+            except Exception as e:
+                log.warning(f"API page {page} attempt {attempt}/3 failed: {e}")
+                if attempt < 3:
+                    time.sleep(3)
+                else:
+                    log.error(f"Page {page} failed after 3 attempts — stopping")
+                    total_pages = 0   # exit loop
+
+        page += 1
+
+    if not all_records:
+        log.error("No records received from API")
+        return None
+
+    # ── Save to CSV ───────────────────────────────────────────────────────────
+    df = pd.DataFrame(all_records)
+    df.to_csv(dest, index=False)
+    checksum = md5(dest)
+
+    log.info(f"API ingestion complete: {len(df):,} products")
+    log.info(f"Columns: {list(df.columns)}")
+    log.info(f"Saved → {dest.name} | MD5: {checksum}")
+    _write_audit_log("rest_api_products", dest, len(df), checksum)
+
+    # ── Fetch catalog stats from API ──────────────────────────────────────────
+    try:
+        stats_resp = requests.get(f"{API_BASE_URL}/api/stats", timeout=10)
+        stats      = stats_resp.json().get("data", {})
+        log.info(f"Catalog stats from API:")
+        log.info(f"  Total products   : {stats.get('total_products'):,}")
+        log.info(f"  Total categories : {stats.get('total_categories')}")
+        log.info(f"  Avg price        : ${stats.get('avg_price')}")
+        log.info(f"  Top category     : {stats.get('top_category')}")
+    except Exception:
+        pass
+
+    return dest
+
+
 # ── Pipeline Runner ───────────────────────────────────────────────────────────
 
-def run_ingestion():
-    """Run full ingestion — both sources."""
+def run_ingestion(include_api: bool = True):
+    """
+    Run full ingestion — all sources.
+
+    Sources:
+      Type 1 (File-based): ratings JSONL + products JSONL
+      Type 2 (REST API):   product catalog API (if server is running)
+
+    Args:
+        include_api: If True, also ingest from REST API source.
+                     Set False if api_server.py is not running.
+    """
     log.info("========== RecoMart Ingestion Pipeline START ==========")
     log.info(f"Dataset: {DATASET_NAME}")
+    log.info(f"Sources: JSONL (file) + {'REST API' if include_api else 'REST API skipped'}")
     start = time.time()
 
+    # Source Type 1 — File-based JSONL
     r_path = ingest_ratings()
     p_path = ingest_products()
+
+    # Source Type 2 — REST API
+    api_path = None
+    if include_api:
+        api_path = ingest_api_products()
 
     elapsed = time.time() - start
     if r_path and p_path:
         log.info(f"========== Ingestion COMPLETE in {elapsed:.1f}s ==========")
-        log.info(f"  Ratings  → {r_path.name}")
-        log.info(f"  Products → {p_path.name}")
+        log.info(f"  Source 1a (JSONL) Ratings  → {r_path.name}")
+        log.info(f"  Source 1b (JSONL) Products → {p_path.name}")
+        if api_path:
+            log.info(f"  Source 2  (API)   Products → {api_path.name}")
+        else:
+            log.info(f"  Source 2  (API)   Products → skipped/unavailable")
     else:
         log.error(f"========== Ingestion PARTIAL/FAILED in {elapsed:.1f}s ==========")
 
-    return r_path, p_path
+    return r_path, p_path, api_path
 
 
-def schedule_ingestion():
+def schedule_ingestion(include_api: bool = True):
     """Run ingestion now, then on schedule every N hours."""
-    run_ingestion()
-    schedule.every(INGESTION_INTERVAL_HOURS).hours.do(run_ingestion)
+    run_ingestion(include_api=include_api)
+    schedule.every(INGESTION_INTERVAL_HOURS).hours.do(
+        run_ingestion, include_api=include_api)
     log.info(f"Scheduler active — next run in {INGESTION_INTERVAL_HOURS}h. Ctrl+C to stop.")
     while True:
         schedule.run_pending()
@@ -342,14 +472,22 @@ def schedule_ingestion():
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="RecoMart Data Ingestion — Video Games")
+    parser = argparse.ArgumentParser(
+        description="RecoMart Data Ingestion — Video Games\n"
+                    "Sources: JSONL files (Type 1) + REST API (Type 2)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument(
         "--schedule", action="store_true",
-        help="Run continuously on schedule (every 24h)"
-    )
+        help="Run continuously on schedule (every 24h)")
+    parser.add_argument(
+        "--no-api", action="store_true",
+        help="Skip REST API ingestion (use if api_server.py is not running)")
     args = parser.parse_args()
 
+    include_api = not args.no_api
+
     if args.schedule:
-        schedule_ingestion()
+        schedule_ingestion(include_api=include_api)
     else:
-        run_ingestion()
+        run_ingestion(include_api=include_api)
