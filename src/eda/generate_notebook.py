@@ -106,6 +106,7 @@ Addressing issues identified in Task 4 validation:
 - Drop 16 out-of-window timestamps
 - Impute missing prices with category median
 - Fill missing categorical fields with 'Unknown'
+- Merge API-enriched fields (rating_count, avg_rating) from REST API source
 """),
 
 code("""\
@@ -154,6 +155,76 @@ products["description"] = products["description"].fillna("")
 print(f"After cleaning — Products: {len(products):,} rows")
 print(f"\\nRemaining nulls:")
 display(products.isnull().sum().to_frame("null_count"))
+"""),
+
+# ── 2g. API enrichment merge ──────────────────────────────────────────────────
+md("""### 2g. Merge REST API Enrichment (Source Type 2)
+The REST API source (`api_products_*.csv`) delivers two pre-computed fields
+not available in the JSONL product source:
+- `rating_count` — total ratings received per product
+- `avg_rating`   — mean star rating per product
+
+These are merged into the product catalog to enrich it for downstream
+feature engineering and content-based filtering.
+"""),
+
+code("""\
+# Load latest API products file
+def load_latest_prefix(directory, prefix):
+    expected_len = len(prefix) + 1 + 8 + 1 + 6
+    candidates = [
+        f for f in directory.glob(f"{prefix}_*.csv")
+        if len(f.stem) == expected_len
+        and f.stem[len(prefix)+1:].replace("_","").isdigit()
+    ]
+    if not candidates:
+        return None
+    return pd.read_csv(str(sorted(candidates, reverse=True)[0]))
+
+api_products = load_latest_prefix(PRODUCTS_DIR, "api_products")
+
+if api_products is not None:
+    print(f"API products loaded: {len(api_products):,} rows")
+    print(f"API columns: {list(api_products.columns)}")
+
+    # Merge rating_count and avg_rating into products
+    enrichment_cols = ["productId", "rating_count", "avg_rating"]
+    available_cols  = [c for c in enrichment_cols if c in api_products.columns]
+    products = products.merge(
+        api_products[available_cols],
+        on="productId",
+        how="left"
+    )
+    products["rating_count"] = products["rating_count"].fillna(0).astype(int)
+    products["avg_rating"]   = products["avg_rating"].fillna(0.0).round(2)
+
+    print(f"\\nProducts after API merge: {products.shape}")
+    print(f"Products with rating data: {(products['rating_count'] > 0).sum():,}")
+    print(f"Avg rating (products with ratings): "
+          f"{products[products['avg_rating'] > 0]['avg_rating'].mean():.2f}")
+    print(f"\\nEnriched columns added: rating_count, avg_rating")
+    display(products[products["rating_count"] > 0][
+        ["productId","title","price","category","rating_count","avg_rating"]
+    ].head(5))
+else:
+    print("API products file not found — skipping enrichment")
+    print("Run api_server.py and ingest_data.py to generate api_products_*.csv")
+    products["rating_count"] = 0
+    products["avg_rating"]   = 0.0
+    print("Placeholder columns added with default values")
+"""),
+
+code("""\
+# Compare JSONL source vs API enriched source
+print("=== Source Comparison ===")
+print(f"JSONL products columns  : {6} (productId, title, price, brand, category, description)")
+print(f"API enriched columns    : {len(products.columns)} ({list(products.columns)})")
+print(f"\\nNew fields from API source:")
+print(f"  rating_count : {products['rating_count'].describe().to_dict()}")
+print(f"  avg_rating   : {products['avg_rating'].describe().to_dict()}")
+print(f"\\nProducts enriched with ratings: "
+      f"{(products['rating_count'] > 0).sum():,} / {len(products):,} "
+      f"({(products['rating_count'] > 0).mean()*100:.1f}%)")
 """),
 
 # ── 3. Rating Distribution ────────────────────────────────────────────────────
@@ -412,7 +483,7 @@ print(f"Peak month: {peak['period'].strftime('%Y-%m')} with {peak['count']:,} ra
 
 # ── 10. Save Processed Data ───────────────────────────────────────────────────
 md("""## 10. Save Processed Datasets
-Save cleaned ratings and products to `data/processed/` for use in Tasks 6–9.
+Save cleaned and API-enriched ratings and products to `data/processed/` for use in Tasks 6–9.
 """),
 code("""\
 PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
@@ -422,16 +493,21 @@ ratings_out = ratings.drop(columns=["date","year","month"], errors="ignore")
 ratings_path = PROCESSED_DIR / "cleaned_ratings.csv"
 ratings_out.to_csv(ratings_path, index=False)
 print(f"Cleaned ratings saved  → {ratings_path.name}")
-print(f"  Shape : {ratings_out.shape}")
-print(f"  Users : {ratings_out['userId'].nunique():,}")
-print(f"  Items : {ratings_out['productId'].nunique():,}")
+print(f"  Shape  : {ratings_out.shape}")
+print(f"  Users  : {ratings_out['userId'].nunique():,}")
+print(f"  Items  : {ratings_out['productId'].nunique():,}")
 
-# Save cleaned products
+# Save cleaned + API-enriched products
+# Includes rating_count and avg_rating from REST API source
 products_path = PROCESSED_DIR / "cleaned_products.csv"
 products.to_csv(products_path, index=False)
 print(f"\\nCleaned products saved → {products_path.name}")
-print(f"  Shape : {products.shape}")
+print(f"  Shape   : {products.shape}")
+print(f"  Columns : {list(products.columns)}")
 print(f"  Nulls remaining: {products.isnull().sum().sum()}")
+print(f"  API enriched (rating_count > 0): "
+      f"{(products['rating_count'] > 0).sum():,} products")
+print(f"\\n✅ Data preparation complete — pipeline ready for Task 6")
 """),
 
 # ── 11. EDA Summary ───────────────────────────────────────────────────────────

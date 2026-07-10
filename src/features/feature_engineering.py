@@ -118,6 +118,7 @@ def build_item_features(ratings: pd.DataFrame,
                         products: pd.DataFrame) -> pd.DataFrame:
     log.info("Building item features...")
 
+    # ── Computed from sampled ratings (10K users) ─────────────────────────────
     itf = ratings.groupby("productId").agg(
         item_rating_count = ("rating",  "count"),
         item_avg_rating   = ("rating",  "mean"),
@@ -127,13 +128,40 @@ def build_item_features(ratings: pd.DataFrame,
 
     itf["item_rating_std"] = itf["item_rating_std"].fillna(0.0)
 
-    # Merge product metadata
+    # ── Merge product metadata ────────────────────────────────────────────────
+    # Select base columns + API-enriched columns if available
+    meta_cols = ["productId", "price", "category", "brand"]
+
+    # Add API-enriched columns if present in cleaned_products.csv
+    api_cols = []
+    if "rating_count" in products.columns:
+        meta_cols.append("rating_count")
+        api_cols.append("rating_count")
+    if "avg_rating" in products.columns:
+        meta_cols.append("avg_rating")
+        api_cols.append("avg_rating")
+
     itf = itf.merge(
-        products[["productId", "price", "category", "brand"]],
+        products[meta_cols],
         on="productId", how="left"
     )
 
-    # Task 5 gap: encode categorical + normalize numerical here
+    # Rename API columns to distinguish from sampled computed columns
+    if "rating_count" in itf.columns:
+        itf.rename(columns={
+            "rating_count": "api_rating_count",
+            "avg_rating":   "api_avg_rating",
+        }, inplace=True)
+        itf["api_rating_count"] = itf["api_rating_count"].fillna(0).astype(int)
+        itf["api_avg_rating"]   = itf["api_avg_rating"].fillna(0.0).round(4)
+        log.info(f"API enrichment fields added: api_rating_count, api_avg_rating")
+        log.info(f"  Products with API ratings: "
+                 f"{(itf['api_rating_count'] > 0).sum():,}")
+    else:
+        log.info("API enrichment fields not available — "
+                 "run api_server.py + ingest_data.py to enable")
+
+    # ── Encoders ──────────────────────────────────────────────────────────────
     # LabelEncoder — category
     le_cat = LabelEncoder()
     itf["category"] = itf["category"].fillna("Unknown")
@@ -274,7 +302,9 @@ def store_to_sqlite(user_f: pd.DataFrame,
         brand               TEXT,
         category_encoded    INTEGER,
         brand_encoded       INTEGER,
-        price_normalized    REAL
+        price_normalized    REAL,
+        api_rating_count    INTEGER,
+        api_avg_rating      REAL
     );
 
     DROP TABLE IF EXISTS interaction_features;
@@ -306,7 +336,8 @@ def store_to_sqlite(user_f: pd.DataFrame,
 
     cols_i = ["productId","item_rating_count","item_avg_rating","item_rating_std",
               "item_unique_users","price","category","brand",
-              "category_encoded","brand_encoded","price_normalized"]
+              "category_encoded","brand_encoded","price_normalized",
+              "api_rating_count","api_avg_rating"]
     item_f[[c for c in cols_i if c in item_f.columns]].to_sql(
         "item_features", conn, if_exists="replace", index=False)
 
@@ -443,15 +474,17 @@ def write_feature_summary(user_f, item_f, inter_f, cooc_f):
         "",
         "## Item Features",
         "",
-        "| Feature | Logic | Rationale |",
-        "|---------|-------|-----------|",
-        "| item_rating_count | COUNT(ratings) per item | Popularity signal |",
-        "| item_avg_rating | MEAN(rating) per item | Quality signal for content-based |",
-        "| item_rating_std | STD(rating) per item | Controversy score (high std = polarizing) |",
-        "| item_unique_users | NUNIQUE(userId) per item | Reach — how many users engaged |",
-        "| price_normalized | MinMaxScaler(price) → [0,1] | Normalized for model input |",
-        "| category_encoded | LabelEncoder(category) | Categorical → numeric for ML |",
-        "| brand_encoded | LabelEncoder(brand) | Categorical → numeric for ML |",
+        "| Feature | Source | Logic | Rationale |",
+        "|---------|--------|-------|-----------|",
+        "| item_rating_count | ratings (sampled) | COUNT(ratings) per item | Popularity from 10K user sample |",
+        "| item_avg_rating | ratings (sampled) | MEAN(rating) per item | Quality signal from sampled users |",
+        "| item_rating_std | ratings (sampled) | STD(rating) per item | Controversy score — polarising items |",
+        "| item_unique_users | ratings (sampled) | NUNIQUE(userId) per item | Reach from sampled users |",
+        "| price_normalized | products (JSONL) | MinMaxScaler(price) → [0,1] | Normalized for model input |",
+        "| category_encoded | products (JSONL) | LabelEncoder(category) | Categorical → numeric for ML |",
+        "| brand_encoded | products (JSONL) | LabelEncoder(brand) | Categorical → numeric for ML |",
+        "| api_rating_count | REST API (Source 2) | rating_count from API | Full catalog popularity (all Amazon users) |",
+        "| api_avg_rating | REST API (Source 2) | avg_rating from API | Full catalog quality signal (all Amazon users) |",
         "",
         "## Interaction Features",
         "",
