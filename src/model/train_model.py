@@ -593,6 +593,185 @@ def save_model_metadata(svd_results: dict, cbf_results: dict):
     return path
 
 
+# ── Inference Interface ───────────────────────────────────────────────────────
+
+def recommend_svd(user_id: str,
+                  top_k: int = 10,
+                  candidate_limit: int = 500) -> pd.DataFrame:
+    """
+    SVD Inference Interface — returns top-K personalised recommendations.
+
+    Loads the trained SVD model and generates predicted ratings for
+    candidate items the user has not yet rated. Returns the top-K
+    products ranked by predicted rating.
+
+    Args:
+        user_id        : Amazon reviewer ID (userId from feature store)
+        top_k          : number of recommendations to return (default 10)
+        candidate_limit: max candidate items to score (default 500)
+
+    Returns:
+        DataFrame with columns:
+          rank, productId, predicted_rating, title, category, price
+    """
+    log.info(f"[Inference] SVD recommend for user: {user_id[:20]}...")
+
+    # ── Load model ────────────────────────────────────────────────────────────
+    model_path = MODELS_DIR / "svd_model.pkl"
+    if not model_path.exists():
+        raise FileNotFoundError(
+            f"Model not found at {model_path}. Run train_model.py first.")
+    with open(model_path, "rb") as f:
+        model = pickle.load(f)
+
+    # ── Load ratings + products for candidate generation ──────────────────────
+    ratings, products = load_data()
+
+    # Items this user has already rated — exclude from recommendations
+    already_rated = set(
+        ratings[ratings["userId"] == user_id]["productId"].tolist()
+    )
+    if not already_rated:
+        log.warning(f"User '{user_id}' not found in ratings — cold start")
+
+    # ── Sample candidate items ────────────────────────────────────────────────
+    # Use most popular items as candidates (highest rating count)
+    popular_items = (ratings["productId"]
+                     .value_counts()
+                     .head(candidate_limit)
+                     .index.tolist())
+    candidates = [p for p in popular_items if p not in already_rated]
+    log.info(f"[Inference] Scoring {len(candidates)} candidate items "
+             f"(excluded {len(already_rated)} already rated)")
+
+    # ── Predict ratings ───────────────────────────────────────────────────────
+    predictions = []
+    for pid in candidates:
+        pred = model.predict(user_id, pid)
+        predictions.append({
+            "productId":        pid,
+            "predicted_rating": round(pred.est, 3),
+        })
+
+    # ── Rank and enrich with product metadata ─────────────────────────────────
+    pred_df = (pd.DataFrame(predictions)
+               .sort_values("predicted_rating", ascending=False)
+               .head(top_k)
+               .reset_index(drop=True))
+    pred_df["rank"] = pred_df.index + 1
+
+    # Merge product metadata
+    meta = products[["productId", "title", "category", "price", "brand"]].copy()
+    result = pred_df.merge(meta, on="productId", how="left")
+    result["title"]    = result["title"].fillna("Unknown").str[:50]
+    result["category"] = result["category"].fillna("Unknown").str[:40]
+
+    log.info(f"[Inference] Top-{top_k} recommendations generated")
+    log.info(f"[Inference] Avg predicted rating: "
+             f"{result['predicted_rating'].mean():.3f}")
+
+    return result[["rank", "productId", "predicted_rating",
+                   "title", "category", "price", "brand"]]
+
+
+def recommend_cbf(product_id: str, top_k: int = 10) -> pd.DataFrame:
+    """
+    Content-Based Inference Interface — returns similar products.
+
+    Loads the pre-computed cosine similarity matrix and returns
+    the top-K most similar products to the given product.
+    Used for 'customers also bought' style recommendations.
+
+    Args:
+        product_id : Amazon ASIN to find similar items for
+        top_k      : number of similar products to return (default 10)
+
+    Returns:
+        DataFrame with columns:
+          rank, productId, similarity_score, title, category, price
+    """
+    log.info(f"[Inference] CBF similar items for: {product_id}")
+
+    sim_path = MODELS_DIR / "cbf_similarity.npz"
+    idx_path = MODELS_DIR / "cbf_product_index.json"
+
+    if not sim_path.exists() or not idx_path.exists():
+        raise FileNotFoundError(
+            "CBF model files not found. Run train_model.py first.")
+
+    from scipy.sparse import load_npz
+    sim_matrix   = load_npz(str(sim_path))
+    with open(idx_path) as f:
+        product_index = json.load(f)
+    index_product = {v: k for k, v in product_index.items()}
+
+    if product_id not in product_index:
+        log.warning(f"Product '{product_id}' not in CBF index")
+        return pd.DataFrame()
+
+    idx      = product_index[product_id]
+    sim_row  = sim_matrix[idx].toarray().flatten()
+
+    # Get top-K similar items (exclude self)
+    top_indices = np.argsort(sim_row)[::-1][1:top_k+1]
+    similar = []
+    for i in top_indices:
+        pid   = index_product.get(i, "")
+        score = float(sim_row[i])
+        if pid and score > 0:
+            similar.append({"productId": pid, "similarity_score": round(score, 4)})
+
+    sim_df = pd.DataFrame(similar)
+    if sim_df.empty:
+        return sim_df
+
+    sim_df["rank"] = sim_df.index + 1
+
+    # Enrich with product metadata
+    _, products = load_data()
+    meta   = products[["productId", "title", "category", "price"]].copy()
+    result = sim_df.merge(meta, on="productId", how="left")
+    result["title"]    = result["title"].fillna("Unknown").str[:50]
+    result["category"] = result["category"].fillna("Unknown").str[:40]
+
+    log.info(f"[Inference] Top-{top_k} similar products found")
+    return result[["rank", "productId", "similarity_score",
+                   "title", "category", "price"]]
+
+
+def run_inference_demo():
+    """
+    Demonstrate the inference interface with sample users and products.
+    Called after training to verify the interface works end-to-end.
+    """
+    log.info("========== Inference Interface Demo START ==========")
+
+    # Load ratings to get sample users
+    ratings, _ = load_data()
+    sample_users = ratings["userId"].value_counts().head(3).index.tolist()
+
+    # ── SVD Recommendations ───────────────────────────────────────────────────
+    log.info("\n--- SVD Collaborative Filtering Recommendations ---")
+    for user_id in sample_users:
+        recs = recommend_svd(user_id, top_k=K_EVAL)
+        log.info(f"\nTop-{K_EVAL} for user {user_id[:25]}...")
+        for _, row in recs.iterrows():
+            log.info(f"  {int(row['rank']):2d}. {row['productId']} | "
+                     f"★{row['predicted_rating']} | {row['title'][:35]}")
+
+    # ── CBF Similar Items ─────────────────────────────────────────────────────
+    log.info("\n--- Content-Based Similar Items ---")
+    sample_product = ratings["productId"].value_counts().index[0]
+    similar = recommend_cbf(sample_product, top_k=5)
+    if not similar.empty:
+        log.info(f"\nTop-5 similar to {sample_product}:")
+        for _, row in similar.iterrows():
+            log.info(f"  {int(row['rank'])}. {row['productId']} | "
+                     f"sim={row['similarity_score']} | {row['title'][:35]}")
+
+    log.info("\n========== Inference Interface Demo COMPLETE ==========")
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def run_model_training():
@@ -621,8 +800,40 @@ def run_model_training():
     log.info(f"MLflow SVD run    : {svd_results['run_id']}")
     log.info(f"MLflow CBF run    : {cbf_results['run_id']}")
 
+    # Run inference demo
+    log.info("\n--- Running Inference Interface Demo ---")
+    run_inference_demo()
+
     return svd_results, cbf_results
 
 
 if __name__ == "__main__":
-    run_model_training()
+    import argparse
+    parser = argparse.ArgumentParser(
+        description="RecoMart Model Training & Inference")
+    parser.add_argument(
+        "--infer-only", action="store_true",
+        help="Skip training — run inference demo on existing model")
+    parser.add_argument(
+        "--user-id", type=str, default=None,
+        help="Run SVD recommendations for a specific user ID")
+    parser.add_argument(
+        "--product-id", type=str, default=None,
+        help="Run CBF similar items for a specific product ID")
+    parser.add_argument(
+        "--top-k", type=int, default=10,
+        help="Number of recommendations to return (default 10)")
+    args = parser.parse_args()
+
+    if args.infer_only:
+        run_inference_demo()
+    elif args.user_id:
+        recs = recommend_svd(args.user_id, top_k=args.top_k)
+        print(f"\nTop-{args.top_k} recommendations for {args.user_id}:")
+        print(recs.to_string(index=False))
+    elif args.product_id:
+        similar = recommend_cbf(args.product_id, top_k=args.top_k)
+        print(f"\nTop-{args.top_k} similar to {args.product_id}:")
+        print(similar.to_string(index=False))
+    else:
+        run_model_training()
