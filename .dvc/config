@@ -1,4 +1,5 @@
 [core]
     remote = localremote
+    autostage = true
 ['remote "localremote"']
     url = /Users/thanigaivel/MTechMaterials/Semester_2/DMML/DMML_Group_37/recomart/.dvc_remote
