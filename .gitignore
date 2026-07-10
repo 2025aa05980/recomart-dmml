@@ -29,3 +29,4 @@ reports/*.png
 data/raw/interactions/*.csv
 data/raw/products/*.csv
 data/raw/logs/*.csv
+*.bak.py
