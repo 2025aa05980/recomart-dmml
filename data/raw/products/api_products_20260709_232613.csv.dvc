@@ -1,0 +1,5 @@
+outs:
+- md5: 11b59abc9842f0d16ee266654c6c9f5b
+  size: 39021381
+  hash: md5
+  path: api_products_20260709_232613.csv

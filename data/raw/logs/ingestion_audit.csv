@@ -1,3 +1,6 @@
 ingested_at,source,file,rows,size_bytes,md5,status,dataset
 2026-07-07T02:59:57.608711,ratings_jsonl,ratings_20260707_025900.csv,268463,14228361,d9c4806c49aebc00bac17c2d1c0cc5a7,SUCCESS,Amazon Reviews 2023 — Video Games
 2026-07-07T03:00:02.969888,metadata_jsonl,products_20260707_025959.csv,137269,44107232,756947899704af56b426655f22908cbf,SUCCESS,Amazon Reviews 2023 — Video Games
+2026-07-09T23:26:10.349305+00:00,ratings_jsonl,ratings_20260709_232532.csv,268463,14228361,d9c4806c49aebc00bac17c2d1c0cc5a7,SUCCESS,Amazon Reviews 2023 — Video Games
+2026-07-09T23:26:13.481115+00:00,metadata_jsonl,products_20260709_232611.csv,137269,44107232,756947899704af56b426655f22908cbf,SUCCESS,Amazon Reviews 2023 — Video Games
+2026-07-09T23:26:23.066978+00:00,rest_api_products,api_products_20260709_232613.csv,137269,39021381,11b59abc9842f0d16ee266654c6c9f5b,SUCCESS,Amazon Reviews 2023 — Video Games

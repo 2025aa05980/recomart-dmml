@@ -1,6 +1,6 @@
 # Feature Engineering Summary — RecoMart Pipeline
 **Task 6 | DMML Assignment 1 | Group 37**
-Generated: 2026-07-07 06:50 UTC
+Generated: 2026-07-10 02:55 UTC
 
 ---
 
@@ -9,7 +9,7 @@ Generated: 2026-07-07 06:50 UTC
 | Table | Rows | Features | Storage |
 |-------|------|----------|---------|
 | user_features | 10,000 | 6 | SQLite |
-| item_features | 45,914 | 10 | SQLite |
+| item_features | 45,914 | 12 | SQLite |
 | interaction_features | 258,524 | 5 | SQLite |
 | cooccurrence | 1,500 | 3 | SQLite |
 
@@ -26,15 +26,17 @@ Generated: 2026-07-07 06:50 UTC
 
 ## Item Features
 
-| Feature | Logic | Rationale |
-|---------|-------|-----------|
-| item_rating_count | COUNT(ratings) per item | Popularity signal |
-| item_avg_rating | MEAN(rating) per item | Quality signal for content-based |
-| item_rating_std | STD(rating) per item | Controversy score (high std = polarizing) |
-| item_unique_users | NUNIQUE(userId) per item | Reach — how many users engaged |
-| price_normalized | MinMaxScaler(price) → [0,1] | Normalized for model input |
-| category_encoded | LabelEncoder(category) | Categorical → numeric for ML |
-| brand_encoded | LabelEncoder(brand) | Categorical → numeric for ML |
+| Feature | Source | Logic | Rationale |
+|---------|--------|-------|-----------|
+| item_rating_count | ratings (sampled) | COUNT(ratings) per item | Popularity from 10K user sample |
+| item_avg_rating | ratings (sampled) | MEAN(rating) per item | Quality signal from sampled users |
+| item_rating_std | ratings (sampled) | STD(rating) per item | Controversy score — polarising items |
+| item_unique_users | ratings (sampled) | NUNIQUE(userId) per item | Reach from sampled users |
+| price_normalized | products (JSONL) | MinMaxScaler(price) → [0,1] | Normalized for model input |
+| category_encoded | products (JSONL) | LabelEncoder(category) | Categorical → numeric for ML |
+| brand_encoded | products (JSONL) | LabelEncoder(brand) | Categorical → numeric for ML |
+| api_rating_count | REST API (Source 2) | rating_count from API | Full catalog popularity (all Amazon users) |
+| api_avg_rating | REST API (Source 2) | avg_rating from API | Full catalog quality signal (all Amazon users) |
 
 ## Interaction Features
 
